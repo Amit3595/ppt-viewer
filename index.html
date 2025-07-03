@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PPT Carousel Viewer</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <!-- ===== HEADER & ACTIONS MENU ===== -->
+        <header class="app-header">
+            <!-- This title will be updated by JavaScript -->
+            <h1 id="presentation-title">PPT Viewer</h1>
+            <div class="header-actions">
+                <!-- The new Upload button is here -->
+                <button id="upload-button" class="header-btn">Upload</button>
+                <div class="menu-container">
+                    <button id="menu-button" class="header-btn">Menu ▼</button>
+                    <div id="dropdown-menu" class="dropdown-menu">
+                        <div class="dropdown-header">Presentations</div>
+                        <ul id="ppt-list" class="ppt-list">
+                            <!-- List will be populated by JS -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- ===== MAIN CAROUSEL VIEWER ===== -->
+        <main id="carousel" class="carousel">
+            <button id="prev-btn" class="carousel-btn">‹</button>
+            
+            <div id="viewer-container" class="viewer-container">
+                <!-- Initial message shown before a PPT is selected -->
+                <div id="welcome-message" class="welcome-message">
+                    <h2>Welcome to the PPT Viewer</h2>
+                    <p>Select a presentation from the menu to get started.</p>
+                </div>
+                <!-- The iframe for the viewer will go here -->
+            </div>
+            
+            <button id="next-btn" class="carousel-btn">›</button>
+        </main>
+        
+        <footer id="carousel-counter" class="carousel-counter">
+            <!-- Counter will be populated by JS -->
+        </footer>
+
+    </div>
+
+    <!-- ===== UPLOAD MODAL (Initially Hidden) ===== -->
+    <div id="upload-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button id="close-modal-btn" class="close-button">×</button>
+            <h3>Upload a New Presentation</h3>
+            <form id="upload-form" class="upload-form">
+                <div class="form-group">
+                    <label for="uploader-name">Your Name</label>
+                    <input type="text" id="uploader-name" placeholder="Enter your name" required>
+                </div>
+                <div class="form-group">
+                    <label for="ppt-file">PowerPoint File (.ppt, .pptx)</label>
+                    <input type="file" id="ppt-file" accept=".ppt,.pptx" required>
+                </div>
+                <button type="submit" class="upload-button">Upload</button>
+                <div id="upload-status" class="upload-status"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Supabase and our custom script -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js"></script>
+</body>
+</html>
