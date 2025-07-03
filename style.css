@@ -180,6 +180,11 @@ body {
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
+.modal-content p {
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
 .close-button {
     position: absolute; top: 10px; right: 15px; font-size: 2rem;
     color: var(--text-muted); background: none; border: none; cursor: pointer;
@@ -201,3 +206,48 @@ body {
 }
 .upload-button:hover { background-color: var(--accent-hover); }
 .upload-status { min-height: 1em; margin-top: 16px; text-align: center; }
+
+
+/* --- NEW MODAL ACTION STYLES --- */
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.modal-btn-secondary {
+    padding: 10px 20px;
+    background-color: var(--main-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+.modal-btn-secondary:hover {
+    border-color: #666;
+}
+
+.modal-btn-danger {
+    padding: 10px 20px;
+    background-color: var(--danger-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+.modal-btn-danger:hover {
+    background-color: #b22222; /* A darker red */
+}
+
+/* Adjust the submit button in the edit modal to fit with the actions */
+#edit-form .upload-button {
+    width: auto; /* override the width:100% */
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    margin-top: 0;
+}

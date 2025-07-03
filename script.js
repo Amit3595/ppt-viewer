@@ -10,25 +10,45 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ===================================================================================
 const presentationTitle = document.getElementById('presentation-title');
 const pptList = document.getElementById('ppt-list');
+const viewerContainer = document.getElementById('viewer-container');
+const menuButton = document.getElementById('menu-button');
+const dropdownMenu = document.getElementById('dropdown-menu');
+const prevBtn = document.getElementById('prev-btn');
+const nextBtn = document.getElementById('next-btn');
+const carouselCounter = document.getElementById('carousel-counter');
+
+// --- Upload Modal Elements ---
+const uploadButton = document.getElementById('upload-button');
+const uploadModal = document.getElementById('upload-modal');
+const closeModalBtn = document.getElementById('close-modal-btn');
 const uploadForm = document.getElementById('upload-form');
 const uploaderNameInput = document.getElementById('uploader-name');
 const pptFileInput = document.getElementById('ppt-file');
 const uploadStatus = document.getElementById('upload-status');
-const viewerContainer = document.getElementById('viewer-container');
-const menuButton = document.getElementById('menu-button');
-const dropdownMenu = document.getElementById('dropdown-menu');
-const uploadButton = document.getElementById('upload-button'); // New Upload button in header
-const uploadModal = document.getElementById('upload-modal');
-const closeModalBtn = document.getElementById('close-modal-btn');
-const prevBtn = document.getElementById('prev-btn');
-const nextBtn = document.getElementById('next-btn');
-const carouselCounter = document.getElementById('carousel-counter');
+
+// --- NEW: Edit Modal Elements ---
+const editNameModal = document.getElementById('edit-name-modal');
+const closeEditModalBtn = document.getElementById('close-edit-modal-btn');
+const cancelEditBtn = document.getElementById('cancel-edit-btn');
+const editForm = document.getElementById('edit-form');
+const editUploaderNameInput = document.getElementById('edit-uploader-name');
+const editStatus = document.getElementById('edit-status');
+
+// --- NEW: Delete Modal Elements ---
+const deleteConfirmModal = document.getElementById('delete-confirm-modal');
+const closeDeleteModalBtn = document.getElementById('close-delete-modal-btn');
+const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+const deleteConfirmMessage = document.getElementById('delete-confirm-message');
+
 
 // ===================================================================================
 // === 3. STATE MANAGEMENT
 // ===================================================================================
 let allPresentations = [];
 let currentIndex = -1;
+// NEW: State for modals to know which item is being acted upon
+let activePresentation = { id: null, filePath: null, uploaderName: null };
 
 // ===================================================================================
 // === 4. CORE FUNCTIONS
@@ -47,8 +67,14 @@ async function fetchAndInitialize() {
     allPresentations = data;
     displayPresentationsInDropdown(allPresentations);
 
-    const lastViewedIndex = currentIndex;
-    currentIndex = allPresentations.length > 0 ? (lastViewedIndex >= 0 && lastViewedIndex < allPresentations.length ? lastViewedIndex : 0) : -1;
+    const lastViewedId = allPresentations[currentIndex]?.id;
+    const newIndex = allPresentations.findIndex(p => p.id === lastViewedId);
+
+    if (newIndex !== -1) {
+        currentIndex = newIndex;
+    } else {
+        currentIndex = allPresentations.length > 0 ? 0 : -1;
+    }
 
     updateCarouselView();
 }
@@ -62,6 +88,7 @@ function displayPresentationsInDropdown(presentations) {
     presentations.forEach((pres) => {
         const li = document.createElement('li');
         li.classList.add('ppt-list-item');
+        // IMPORTANT: We use the actual database ID now
         li.dataset.id = pres.id;
 
         li.innerHTML = `
@@ -103,35 +130,82 @@ function displayViewer(filePath) {
     viewerContainer.innerHTML = `<iframe id="viewer-iframe" src="${viewerUrl}" frameborder="0"></iframe>`;
 }
 
-async function handleEdit(id, currentName) {
-    const newName = prompt("Enter the new name for the uploader:", currentName);
-    if (newName && newName.trim() !== "") {
-        const { error } = await supabase.from('presentations').update({ uploader_name: newName.trim() }).eq('id', id);
+// --- REFACTORED: Edit and Delete Handlers ---
+
+// This function now just OPENS the modal
+function handleEdit(presentation) {
+    // Store the presentation info in our state object
+    activePresentation = { id: presentation.id, uploaderName: presentation.uploader_name };
+    // Pre-fill the input with the current name
+    editUploaderNameInput.value = presentation.uploader_name;
+    editStatus.textContent = ''; // Clear any previous status messages
+    // Show the modal
+    editNameModal.classList.remove('hidden');
+}
+
+// This function now just OPENS the modal
+function handleDelete(presentation) {
+    // Store the presentation info in our state object
+    activePresentation = { id: presentation.id, filePath: presentation.file_path };
+    // Update the message to be specific
+    deleteConfirmMessage.textContent = `Are you sure you want to delete "${presentation.file_name}"? This action cannot be undone.`;
+    // Show the modal
+    deleteConfirmModal.classList.remove('hidden');
+}
+
+// --- NEW: Functions to perform the actual work, called by modal buttons ---
+
+async function performEdit(event) {
+    event.preventDefault();
+    const newName = editUploaderNameInput.value.trim();
+
+    if (newName && newName !== activePresentation.uploaderName) {
+        editStatus.textContent = 'Saving...';
+        const { error } = await supabase.from('presentations').update({ uploader_name: newName }).eq('id', activePresentation.id);
+        
         if (error) {
-            alert("Failed to update name: " + error.message);
+            editStatus.textContent = "Failed to update name: " + error.message;
         } else {
-            fetchAndInitialize();
+            editStatus.textContent = 'Saved!';
+            setTimeout(() => {
+                editNameModal.classList.add('hidden');
+                fetchAndInitialize(); // Re-fetch to show updated data
+            }, 1000);
         }
+    } else if (newName === activePresentation.uploaderName) {
+        // No changes were made, just close the modal
+        editNameModal.classList.add('hidden');
+    } else {
+        editStatus.textContent = 'Name cannot be empty.';
     }
 }
 
-async function handleDelete(id, filePath) {
-    const isConfirmed = confirm(`Are you sure you want to delete this presentation? This action cannot be undone.`);
-    if (isConfirmed) {
-        const { error: storageError } = await supabase.storage.from('ppts').remove([filePath]);
-        if (storageError) {
-            alert("Failed to delete file from storage: " + storageError.message);
-            return;
-        }
+async function performDelete() {
+    // Use the stored state
+    const { id, filePath } = activePresentation;
 
-        const { error: dbError } = await supabase.from('presentations').delete().eq('id', id);
-        if (dbError) {
-            alert("File was deleted from storage, but failed to delete database record: " + dbError.message);
-        } else {
-            currentIndex = -1;
-            fetchAndInitialize();
-        }
+    // First, delete the file from storage
+    const { error: storageError } = await supabase.storage.from('ppts').remove([filePath]);
+    if (storageError) {
+        alert("Failed to delete file from storage: " + storageError.message);
+        deleteConfirmModal.classList.add('hidden'); // Close modal on failure
+        return;
     }
+
+    // Then, delete the record from the database
+    const { error: dbError } = await supabase.from('presentations').delete().eq('id', id);
+    if (dbError) {
+        // This is a tricky state, but we should inform the user.
+        alert("File was deleted from storage, but failed to delete database record: " + dbError.message);
+    }
+    
+    // Close the modal and refresh the list
+    deleteConfirmModal.classList.add('hidden');
+    // If the deleted item was the one being viewed, reset the index
+    if (allPresentations[currentIndex]?.id === id) {
+        currentIndex = -1;
+    }
+    fetchAndInitialize(); 
 }
 
 async function handleUpload(event) {
@@ -156,8 +230,8 @@ async function handleUpload(event) {
             uploadModal.classList.add('hidden');
             uploadForm.reset();
             uploadStatus.textContent = '';
+            fetchAndInitialize(); // Re-fetch data after successful upload
         }, 1500);
-        fetchAndInitialize();
     } catch (error) {
         console.error('Upload failed:', error);
         uploadStatus.textContent = `Upload failed: ${error.message}`;
@@ -194,27 +268,47 @@ pptList.addEventListener('click', (event) => {
     if (!listItem) return;
 
     const presId = listItem.dataset.id;
+    // Find the full presentation object by its database ID
     const presentation = allPresentations.find(p => p.id === presId);
     if (!presentation) return;
 
     if (event.target.closest('.delete-btn')) {
-        handleDelete(presentation.id, presentation.file_path);
+        handleDelete(presentation); // Pass the whole object
     } else if (event.target.closest('.edit-btn')) {
-        handleEdit(presentation.id, presentation.uploader_name);
+        handleEdit(presentation); // Pass the whole object
     } else {
+        // Find the index of the clicked presentation
         currentIndex = allPresentations.findIndex(p => p.id === presId);
         updateCarouselView();
         dropdownMenu.classList.remove('show');
     }
 });
 
+// --- Upload Modal Listeners ---
 uploadButton.addEventListener('click', () => uploadModal.classList.remove('hidden'));
 closeModalBtn.addEventListener('click', () => uploadModal.classList.add('hidden'));
 uploadModal.addEventListener('click', (event) => {
     if (event.target === uploadModal) uploadModal.classList.add('hidden');
 });
-
 uploadForm.addEventListener('submit', handleUpload);
+
+
+// --- NEW: Edit Modal Listeners ---
+editForm.addEventListener('submit', performEdit);
+closeEditModalBtn.addEventListener('click', () => editNameModal.classList.add('hidden'));
+cancelEditBtn.addEventListener('click', () => editNameModal.classList.add('hidden'));
+editNameModal.addEventListener('click', (event) => {
+    if (event.target === editNameModal) editNameModal.classList.add('hidden');
+});
+
+// --- NEW: Delete Modal Listeners ---
+confirmDeleteBtn.addEventListener('click', performDelete);
+closeDeleteModalBtn.addEventListener('click', () => deleteConfirmModal.classList.add('hidden'));
+cancelDeleteBtn.addEventListener('click', () => deleteConfirmModal.classList.add('hidden'));
+deleteConfirmModal.addEventListener('click', (event) => {
+    if (event.target === deleteConfirmModal) deleteConfirmModal.classList.add('hidden');
+});
+
 
 // ===================================================================================
 // === 6. INITIALIZATION
