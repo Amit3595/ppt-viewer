@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PPT Carousel Viewer</title>
+    <title>Document Viewer</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,15 +15,14 @@
         
         <!-- ===== HEADER & ACTIONS MENU ===== -->
         <header class="app-header">
-            <h1 id="presentation-title">PPT Viewer</h1>
+            <h1 id="presentation-title">Document Viewer</h1>
             <div class="header-actions">
-                <!-- NEW Download Button -->
-                <button id="download-button" class="header-btn" title="Download current presentation" disabled>Download</button>
+                <button id="download-button" class="header-btn" title="Download current file" disabled>Download</button>
                 <button id="upload-button" class="header-btn">Upload</button>
                 <div class="menu-container">
                     <button id="menu-button" class="header-btn">Menu ▼</button>
                     <div id="dropdown-menu" class="dropdown-menu">
-                        <div class="dropdown-header">Presentations</div>
+                        <div class="dropdown-header">Files</div>
                         <ul id="ppt-list" class="ppt-list">
                             <!-- List will be populated by JS -->
                         </ul>
@@ -38,8 +37,8 @@
             
             <div id="viewer-container" class="viewer-container">
                 <div id="welcome-message" class="welcome-message">
-                    <h2>Welcome to the PPT Viewer</h2>
-                    <p>Select a presentation from the menu to get started.</p>
+                    <h2>Welcome to the Document Viewer</h2>
+                    <p>Select a file from the menu to get started.</p>
                 </div>
             </div>
             
@@ -52,20 +51,19 @@
 
     </div>
 
-    <!-- Modals remain the same as before -->
     <!-- ===== UPLOAD MODAL ===== -->
     <div id="upload-modal" class="modal-overlay">
         <div class="modal-content">
             <button id="close-modal-btn" class="close-button">×</button>
-            <h3>Upload a New Presentation</h3>
+            <h3>Upload a New Document</h3>
             <form id="upload-form" class="upload-form">
                 <div class="form-group">
                     <label for="uploader-name">Your Name</label>
                     <input type="text" id="uploader-name" placeholder="Enter your name" required>
                 </div>
                 <div class="form-group">
-                    <label for="ppt-file">PowerPoint File (.ppt, .pptx)</label>
-                    <input type="file" id="ppt-file" accept=".ppt,.pptx" required>
+                    <label for="ppt-file">Document File (.pdf, .docx, .pptx, etc.)</label>
+                    <input type="file" id="ppt-file" accept=".ppt,.pptx,.doc,.docx,.xls,.xlsx,.pdf" required>
                 </div>
                 <button type="submit" class="upload-button">Upload</button>
                 <div id="upload-status" class="upload-status"></div>
@@ -78,7 +76,7 @@
         <div class="modal-content">
             <button id="close-delete-modal-btn" class="close-button">×</button>
             <h3>Confirm Deletion</h3>
-            <p id="delete-confirm-message">Are you sure you want to delete this presentation? This action cannot be undone.</p>
+            <p id="delete-confirm-message">Are you sure you want to delete this file? This action cannot be undone.</p>
             <div class="modal-actions">
                 <button id="cancel-delete-btn" class="modal-btn-secondary">Cancel</button>
                 <button id="confirm-delete-btn" class="modal-btn-danger">Confirm Delete</button>

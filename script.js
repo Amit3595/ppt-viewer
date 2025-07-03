@@ -16,7 +16,7 @@ const dropdownMenu = document.getElementById('dropdown-menu');
 const prevBtn = document.getElementById('prev-btn');
 const nextBtn = document.getElementById('next-btn');
 const carouselCounter = document.getElementById('carousel-counter');
-const downloadButton = document.getElementById('download-button'); // NEW
+const downloadButton = document.getElementById('download-button');
 
 // Modal Elements
 const allModals = document.querySelectorAll('.modal-overlay');
@@ -56,121 +56,126 @@ let activePresentation = { id: null, filePath: null, uploaderName: null };
 // === 4. CORE & HELPER FUNCTIONS
 // ===================================================================================
 
-// --- MODAL HELPERS FOR ANIMATION ---
-function showModal(modal) {
-    modal.classList.add('visible');
-}
-function hideModal(modal) {
-    modal.classList.remove('visible');
+// --- MODAL HELPERS ---
+function showModal(modal) { modal.classList.add('visible'); }
+function hideModal(modal) { modal.classList.remove('visible'); }
+
+// --- NEW: FILETYPE ICON HELPER ---
+function getFileIcon(fileName) {
+    const extension = fileName.split('.').pop().toLowerCase();
+    switch (extension) {
+        case 'pdf':    return '📄';
+        case 'doc':
+        case 'docx':   return '📘';
+        case 'xls':
+        case 'xlsx':   return '📊';
+        case 'ppt':
+        case 'pptx':   return '📙';
+        default:       return '📁';
+    }
 }
 
 async function fetchAndInitialize() {
-    // ... (This function remains the same as before)
-    viewerContainer.innerHTML = '<div class="welcome-message"><p>Loading presentations...</p></div>';
+    viewerContainer.innerHTML = '<div class="welcome-message"><p>Loading files...</p></div>';
+    // Note: The bucket is still named 'ppts', but it holds all file types.
+    // This is fine, but for a new project, you might name it 'documents'.
     const { data, error } = await supabase.from('presentations').select('*').order('created_at', { ascending: false });
 
     if (error) {
-        console.error('Error fetching presentations:', error);
+        console.error('Error fetching files:', error);
         viewerContainer.innerHTML = '<div class="welcome-message"><p>Failed to load data.</p></div>';
         return;
     }
 
     allPresentations = data;
     displayPresentationsInDropdown(allPresentations);
-
     const lastViewedId = allPresentations[currentIndex]?.id;
     const newIndex = allPresentations.findIndex(p => p.id === lastViewedId);
-
-    if (newIndex !== -1) {
-        currentIndex = newIndex;
-    } else {
-        currentIndex = allPresentations.length > 0 ? 0 : -1;
-    }
-
+    currentIndex = (newIndex !== -1) ? newIndex : (allPresentations.length > 0 ? 0 : -1);
     updateCarouselView();
 }
 
+// UPDATED to show file icons
 function displayPresentationsInDropdown(presentations) {
-    // ... (This function remains the same as before)
     pptList.innerHTML = '';
     if (presentations.length === 0) {
-        pptList.innerHTML = '<li class="dropdown-item" style="cursor:default; color:var(--text-muted); padding: 12px 16px;">No presentations found.</li>';
+        pptList.innerHTML = '<li class="dropdown-item" style="cursor:default; color:var(--text-muted); padding: 12px 16px;">No files found.</li>';
         return;
     }
     presentations.forEach((pres) => {
         const li = document.createElement('li');
         li.classList.add('ppt-list-item');
         li.dataset.id = pres.id;
-
+        const icon = getFileIcon(pres.file_name);
         li.innerHTML = `
             <div class="ppt-info">
-                <div class="ppt-name">${pres.file_name}</div>
+                <div class="ppt-name">${icon} ${pres.file_name}</div>
                 <div class="ppt-uploader">by ${pres.uploader_name}</div>
             </div>
             <div class="item-actions">
                 <button class="action-btn edit-btn" title="Edit Name">✎</button>
-                <button class="action-btn delete-btn" title="Delete Presentation">🗑️</button>
+                <button class="action-btn delete-btn" title="Delete File">🗑️</button>
             </div>
         `;
         pptList.appendChild(li);
     });
 }
 
+// UPDATED with more generic text
 function updateCarouselView() {
-    // UPDATED to manage download button state
     if (currentIndex === -1 || allPresentations.length === 0) {
-        viewerContainer.innerHTML = `<div id="welcome-message" class="welcome-message"><h2>PPT Viewer</h2><p>Select a presentation from the menu to get started or upload a new one.</p></div>`;
-        presentationTitle.textContent = 'PPT Viewer';
-        carouselCounter.textContent = 'No presentations loaded';
+        viewerContainer.innerHTML = `<div id="welcome-message" class="welcome-message"><h2>Document Viewer</h2><p>Select a file from the menu to get started or upload a new one.</p></div>`;
+        presentationTitle.textContent = 'Document Viewer';
+        carouselCounter.textContent = 'No files loaded';
         prevBtn.disabled = true;
         nextBtn.disabled = true;
-        downloadButton.disabled = true; // Disable download button
+        downloadButton.disabled = true;
         return;
     }
-
     const currentPres = allPresentations[currentIndex];
-    displayViewer(currentPres.file_path);
-    presentationTitle.textContent = currentPres.file_name;
+    displayViewer(currentPres.file_path, currentPres.file_name);
+    presentationTitle.textContent = getFileIcon(currentPres.file_name) + ' ' + currentPres.file_name;
     carouselCounter.textContent = `${currentIndex + 1} of ${allPresentations.length}`;
-
     prevBtn.disabled = (currentIndex === 0);
     nextBtn.disabled = (currentIndex === allPresentations.length - 1);
-    downloadButton.disabled = false; // Enable download button
+    downloadButton.disabled = false;
 }
 
+// UPDATED with conditional viewer logic
 function displayViewer(filePath) {
-    // ... (This function remains the same as before)
+    const extension = filePath.split('.').pop().toLowerCase();
     const { data } = supabase.storage.from('ppts').getPublicUrl(filePath);
-    const viewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(data.publicUrl)}`;
+    const publicUrl = data.publicUrl;
+    let viewerUrl;
+
+    if (extension === 'pdf') {
+        // For PDFs, use the direct public URL. The browser's native PDF viewer will be used.
+        viewerUrl = publicUrl;
+    } else {
+        // For Office documents, use the Microsoft Office Apps Live Viewer.
+        viewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(publicUrl)}`;
+    }
+    
     viewerContainer.innerHTML = `<iframe id="viewer-iframe" src="${viewerUrl}" frameborder="0"></iframe>`;
 }
 
-// --- Action Handlers ---
+// --- Action Handlers (Most remain unchanged) ---
 
-// NEW Download Handler
 async function handleDownload() {
     if (currentIndex === -1) return;
-    
     const presentation = allPresentations[currentIndex];
     downloadButton.textContent = 'Downloading...';
     downloadButton.disabled = true;
-
     try {
-        const { data: blob, error } = await supabase.storage
-            .from('ppts')
-            .download(presentation.file_path);
-
+        const { data: blob, error } = await supabase.storage.from('ppts').download(presentation.file_path);
         if (error) throw error;
-        
-        // Create a temporary link to trigger the download
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = presentation.file_name; // Use original file name
+        link.download = presentation.file_name;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(link.href);
-
     } catch (error) {
         console.error('Error downloading file:', error);
         alert('Failed to download file. Please try again.');
@@ -179,7 +184,6 @@ async function handleDownload() {
         downloadButton.disabled = false;
     }
 }
-
 
 function handleEdit(presentation) {
     activePresentation = { id: presentation.id, uploaderName: presentation.uploader_name };
@@ -194,8 +198,8 @@ function handleDelete(presentation) {
     showModal(deleteConfirmModal);
 }
 
+// ... performEdit, performDelete, handleUpload functions remain exactly the same ...
 async function performEdit(event) {
-    // ... (Logic is the same, just uses hideModal)
     event.preventDefault();
     const newName = editUploaderNameInput.value.trim();
 
@@ -220,7 +224,6 @@ async function performEdit(event) {
 }
 
 async function performDelete() {
-    // ... (Logic is the same, just uses hideModal)
     const { id, filePath } = activePresentation;
     const { error: storageError } = await supabase.storage.from('ppts').remove([filePath]);
     if (storageError) {
@@ -242,7 +245,6 @@ async function performDelete() {
 }
 
 async function handleUpload(event) {
-    // ... (Logic is the same, just uses hideModal)
     event.preventDefault();
     const uploaderName = uploaderNameInput.value.trim();
     const file = pptFileInput.files[0];
@@ -275,9 +277,8 @@ async function handleUpload(event) {
 // ===================================================================================
 // === 5. EVENT LISTENERS
 // ===================================================================================
-
-downloadButton.addEventListener('click', handleDownload); // NEW
-
+// ... All event listeners remain exactly the same ...
+downloadButton.addEventListener('click', handleDownload);
 prevBtn.addEventListener('click', () => {
     if (currentIndex > 0) {
         currentIndex--;
@@ -290,22 +291,18 @@ nextBtn.addEventListener('click', () => {
         updateCarouselView();
     }
 });
-
 menuButton.addEventListener('click', () => dropdownMenu.classList.toggle('show'));
 window.addEventListener('click', (event) => {
     if (!menuButton.contains(event.target) && !dropdownMenu.contains(event.target)) {
         dropdownMenu.classList.remove('show');
     }
 });
-
 pptList.addEventListener('click', (event) => {
     const listItem = event.target.closest('.ppt-list-item');
     if (!listItem) return;
-
     const presId = listItem.dataset.id;
     const presentation = allPresentations.find(p => p.id === presId);
     if (!presentation) return;
-
     if (event.target.closest('.delete-btn')) {
         handleDelete(presentation);
     } else if (event.target.closest('.edit-btn')) {
@@ -316,21 +313,15 @@ pptList.addEventListener('click', (event) => {
         dropdownMenu.classList.remove('show');
     }
 });
-
-// --- Modal Listeners (UPDATED for new animation classes) ---
 uploadButton.addEventListener('click', () => showModal(uploadModal));
 closeModalBtn.addEventListener('click', () => hideModal(uploadModal));
 uploadForm.addEventListener('submit', handleUpload);
-
 editForm.addEventListener('submit', performEdit);
 closeEditModalBtn.addEventListener('click', () => hideModal(editNameModal));
 cancelEditBtn.addEventListener('click', () => hideModal(editNameModal));
-
 confirmDeleteBtn.addEventListener('click', performDelete);
 closeDeleteModalBtn.addEventListener('click', () => hideModal(deleteConfirmModal));
 cancelDeleteBtn.addEventListener('click', () => hideModal(deleteConfirmModal));
-
-// Universal modal close when clicking on the overlay
 allModals.forEach(modal => {
     modal.addEventListener('click', (event) => {
         if (event.target === modal) {
@@ -343,5 +334,4 @@ allModals.forEach(modal => {
 // === 6. INITIALIZATION
 // ===================================================================================
 fetchAndInitialize();
-// Hide all modals on initial load
 allModals.forEach(modal => hideModal(modal));
