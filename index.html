@@ -15,10 +15,10 @@
         
         <!-- ===== HEADER & ACTIONS MENU ===== -->
         <header class="app-header">
-            <!-- This title will be updated by JavaScript -->
             <h1 id="presentation-title">PPT Viewer</h1>
             <div class="header-actions">
-                <!-- The new Upload button is here -->
+                <!-- NEW Download Button -->
+                <button id="download-button" class="header-btn" title="Download current presentation" disabled>Download</button>
                 <button id="upload-button" class="header-btn">Upload</button>
                 <div class="menu-container">
                     <button id="menu-button" class="header-btn">Menu ▼</button>
@@ -37,12 +37,10 @@
             <button id="prev-btn" class="carousel-btn">‹</button>
             
             <div id="viewer-container" class="viewer-container">
-                <!-- Initial message shown before a PPT is selected -->
                 <div id="welcome-message" class="welcome-message">
                     <h2>Welcome to the PPT Viewer</h2>
                     <p>Select a presentation from the menu to get started.</p>
                 </div>
-                <!-- The iframe for the viewer will go here -->
             </div>
             
             <button id="next-btn" class="carousel-btn">›</button>
@@ -54,8 +52,9 @@
 
     </div>
 
-    <!-- ===== UPLOAD MODAL (Initially Hidden) ===== -->
-    <div id="upload-modal" class="modal-overlay hidden">
+    <!-- Modals remain the same as before -->
+    <!-- ===== UPLOAD MODAL ===== -->
+    <div id="upload-modal" class="modal-overlay">
         <div class="modal-content">
             <button id="close-modal-btn" class="close-button">×</button>
             <h3>Upload a New Presentation</h3>
@@ -74,8 +73,8 @@
         </div>
     </div>
     
-    <!-- ===== DELETE CONFIRMATION MODAL (NEW) ===== -->
-    <div id="delete-confirm-modal" class="modal-overlay hidden">
+    <!-- ===== DELETE CONFIRMATION MODAL ===== -->
+    <div id="delete-confirm-modal" class="modal-overlay">
         <div class="modal-content">
             <button id="close-delete-modal-btn" class="close-button">×</button>
             <h3>Confirm Deletion</h3>
@@ -87,8 +86,8 @@
         </div>
     </div>
 
-    <!-- ===== EDIT NAME MODAL (NEW) ===== -->
-    <div id="edit-name-modal" class="modal-overlay hidden">
+    <!-- ===== EDIT NAME MODAL ===== -->
+    <div id="edit-name-modal" class="modal-overlay">
         <div class="modal-content">
             <button id="close-edit-modal-btn" class="close-button">×</button>
             <h3>Edit Uploader Name</h3>
@@ -106,7 +105,7 @@
         </div>
     </div>
 
-    <!-- Supabase and our custom script -->
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>
 </body>
