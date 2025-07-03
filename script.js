@@ -1,8 +1,8 @@
 // ===================================================================================
 // === 1. CONFIGURATION
 // ===================================================================================
-const SUPABASE_URL = 'https://ranvcpqfcynzblfhnaer.supabase.co'; // Your Supabase URL
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhbnZjcHFmY3luemJsZmhuYWVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0NTc4OTQsImV4cCI6MjA2NzAzMzg5NH0.j2Cxny4EYW4_NzE4AYyi597CwCgZAF5VTqyslJNU5UI'; // Your Supabase Anon Key
+const SUPABASE_URL = 'https://twgslkjjhsjmagvprcip.supabase.co'; // Your Supabase URL
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3Z3Nsa2pqaHNqbWFndnByY2lwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0ODIwNjQsImV4cCI6MjA2NzA1ODA2NH0.l0ylH1mQrpTSqCRNcYUvOsqRtwPnLkS6XHOLen__e1Y'; // Your Supabase Anon Key
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ===================================================================================
@@ -47,10 +47,9 @@ async function fetchAndInitialize() {
     allPresentations = data;
     displayPresentationsInDropdown(allPresentations);
 
-    // If there was a presentation selected, try to keep it selected.
     const lastViewedIndex = currentIndex;
     currentIndex = allPresentations.length > 0 ? (lastViewedIndex >= 0 && lastViewedIndex < allPresentations.length ? lastViewedIndex : 0) : -1;
-    
+
     updateCarouselView();
 }
 
@@ -63,7 +62,6 @@ function displayPresentationsInDropdown(presentations) {
     presentations.forEach((pres) => {
         const li = document.createElement('li');
         li.classList.add('ppt-list-item');
-        // Add a data-id to the main li element for easy access
         li.dataset.id = pres.id;
 
         li.innerHTML = `
@@ -92,7 +90,7 @@ function updateCarouselView() {
 
     const currentPres = allPresentations[currentIndex];
     displayViewer(currentPres.file_path);
-    presentationTitle.textContent = currentPres.file_name; // Update header title
+    presentationTitle.textContent = currentPres.file_name;
     carouselCounter.textContent = `${currentIndex + 1} of ${allPresentations.length}`;
 
     prevBtn.disabled = (currentIndex === 0);
@@ -105,8 +103,6 @@ function displayViewer(filePath) {
     viewerContainer.innerHTML = `<iframe id="viewer-iframe" src="${viewerUrl}" frameborder="0"></iframe>`;
 }
 
-// --- NEW CRUD (Create, Read, Update, Delete) Functions ---
-
 async function handleEdit(id, currentName) {
     const newName = prompt("Enter the new name for the uploader:", currentName);
     if (newName && newName.trim() !== "") {
@@ -114,7 +110,7 @@ async function handleEdit(id, currentName) {
         if (error) {
             alert("Failed to update name: " + error.message);
         } else {
-            fetchAndInitialize(); // Refresh everything
+            fetchAndInitialize();
         }
     }
 }
@@ -122,19 +118,16 @@ async function handleEdit(id, currentName) {
 async function handleDelete(id, filePath) {
     const isConfirmed = confirm(`Are you sure you want to delete this presentation? This action cannot be undone.`);
     if (isConfirmed) {
-        // Step 1: Delete the file from Storage
         const { error: storageError } = await supabase.storage.from('ppts').remove([filePath]);
         if (storageError) {
             alert("Failed to delete file from storage: " + storageError.message);
-            return; // Stop if the file can't be deleted
+            return;
         }
 
-        // Step 2: Delete the record from the database
         const { error: dbError } = await supabase.from('presentations').delete().eq('id', id);
         if (dbError) {
             alert("File was deleted from storage, but failed to delete database record: " + dbError.message);
         } else {
-            // If the deleted item was the one being viewed, reset the view
             currentIndex = -1;
             fetchAndInitialize();
         }
@@ -175,11 +168,20 @@ async function handleUpload(event) {
 // === 5. EVENT LISTENERS
 // ===================================================================================
 
-// Carousel navigation
-prevBtn.addEventListener('click', () => { if (currentIndex > 0) { currentIndex--; updateCarouselView(); } });
-nextBtn.addEventListener('click', () => { if (currentIndex < allPresentations.length - 1) { currentIndex++; updateCarouselView(); } });
+prevBtn.addEventListener('click', () => {
+    if (currentIndex > 0) {
+        currentIndex--;
+        updateCarouselView();
+    }
+});
 
-// Dropdown menu
+nextBtn.addEventListener('click', () => {
+    if (currentIndex < allPresentations.length - 1) {
+        currentIndex++;
+        updateCarouselView();
+    }
+});
+
 menuButton.addEventListener('click', () => dropdownMenu.classList.toggle('show'));
 window.addEventListener('click', (event) => {
     if (!menuButton.contains(event.target) && !dropdownMenu.contains(event.target)) {
@@ -187,10 +189,9 @@ window.addEventListener('click', (event) => {
     }
 });
 
-// *** NEW: Event Delegation for list items (view, edit, delete) ***
 pptList.addEventListener('click', (event) => {
     const listItem = event.target.closest('.ppt-list-item');
-    if (!listItem) return; // Didn't click inside a list item
+    if (!listItem) return;
 
     const presId = listItem.dataset.id;
     const presentation = allPresentations.find(p => p.id === presId);
@@ -201,21 +202,18 @@ pptList.addEventListener('click', (event) => {
     } else if (event.target.closest('.edit-btn')) {
         handleEdit(presentation.id, presentation.uploader_name);
     } else {
-        // Clicked on the item itself, not a button -> view it
         currentIndex = allPresentations.findIndex(p => p.id === presId);
         updateCarouselView();
         dropdownMenu.classList.remove('show');
     }
 });
 
-// Modal controls
 uploadButton.addEventListener('click', () => uploadModal.classList.remove('hidden'));
 closeModalBtn.addEventListener('click', () => uploadModal.classList.add('hidden'));
 uploadModal.addEventListener('click', (event) => {
     if (event.target === uploadModal) uploadModal.classList.add('hidden');
 });
 
-// Form submission
 uploadForm.addEventListener('submit', handleUpload);
 
 // ===================================================================================
