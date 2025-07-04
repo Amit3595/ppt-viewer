@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
@@ -17,10 +17,19 @@
         <header class="app-header">
             <h1 id="presentation-title">Document Viewer</h1>
             <div class="header-actions">
-                <button id="download-button" class="header-btn" title="Download current file" disabled>Download</button>
-                <button id="upload-button" class="header-btn">Upload</button>
+                <!-- MODIFIED: Reverted to show both icon and text for clarity -->
+                <button id="upload-button" class="header-btn" title="Upload a new document">
+                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10 2a.75.75 0 01.75.75v6.52l1.97-1.97a.75.75 0 111.06 1.06l-3.25 3.25a.75.75 0 01-1.06 0L5.22 8.36a.75.75 0 011.06-1.06l1.97 1.97V2.75A.75.75 0 0110 2zM3.5 12.5a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" />
+                    </svg>
+                    Upload
+                </button>
                 <div class="menu-container">
-                    <button id="menu-button" class="header-btn">Menu ▼</button>
+                    <button id="menu-button" class="header-btn header-btn--icon-only" title="Open File Menu">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M10 3a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM10 8.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM11.5 15.5a1.5 1.5 0 10-3 0 1.5 1.5 0 003 0z" />
+                        </svg>
+                    </button>
                     <div id="dropdown-menu" class="dropdown-menu">
                         <div class="dropdown-header">Files</div>
                         <ul id="ppt-list" class="ppt-list">
@@ -33,40 +42,45 @@
 
         <!-- ===== MAIN CAROUSEL VIEWER ===== -->
         <main id="carousel" class="carousel">
-            <button id="prev-btn" class="carousel-btn">‹</button>
-            
+            <button id="prev-btn" class="carousel-btn" title="Previous">‹</button>
             <div id="viewer-container" class="viewer-container">
-                <div id="welcome-message" class="welcome-message">
-                    <h2>Welcome to the Document Viewer</h2>
-                    <p>Select a file from the menu to get started.</p>
-                </div>
+                <!-- Welcome message or iframe will be injected here -->
             </div>
-            
-            <button id="next-btn" class="carousel-btn">›</button>
+            <button id="next-btn" class="carousel-btn" title="Next">›</button>
         </main>
         
-        <footer id="carousel-counter" class="carousel-counter">
-            <!-- Counter will be populated by JS -->
-        </footer>
+        <footer id="carousel-counter" class="carousel-counter"></footer>
 
     </div>
 
-    <!-- ===== UPLOAD MODAL ===== -->
+    <!-- ===== UPLOAD MODAL (Hybrid Drag & Drop + Button) ===== -->
     <div id="upload-modal" class="modal-overlay">
         <div class="modal-content">
             <button id="close-modal-btn" class="close-button">×</button>
-            <h3>Upload a New Document</h3>
+            <h3>Upload Document</h3>
+            <p>Enter your name, then drag a file or browse your computer.</p>
             <form id="upload-form" class="upload-form">
                 <div class="form-group">
                     <label for="uploader-name">Your Name</label>
                     <input type="text" id="uploader-name" placeholder="Enter your name" required>
                 </div>
+                
                 <div class="form-group">
-                    <label for="ppt-file">Document File (.pdf, .docx, .pptx, etc.)</label>
+                    <label>Document File</label>
+                    <div id="drop-zone" class="drop-zone">
+                        <span class="drop-zone-icon">📤</span>
+                        <span id="drop-zone-text" class="drop-zone-text">Drag & Drop File Here</span>
+                    </div>
+                    <div class="upload-separator"><span>or</span></div>
+                    <label for="ppt-file" class="modal-btn file-browse-btn">Browse Files</label>
                     <input type="file" id="ppt-file" accept=".ppt,.pptx,.doc,.docx,.xls,.xlsx,.pdf" required>
                 </div>
-                <button type="submit" class="upload-button">Upload</button>
+
                 <div id="upload-status" class="upload-status"></div>
+                <div class="modal-actions">
+                    <button type="button" class="modal-btn modal-btn-secondary" id="cancel-upload-btn">Cancel</button>
+                    <button type="submit" class="modal-btn modal-btn-primary">Upload File</button>
+                </div>
             </form>
         </div>
     </div>
@@ -76,10 +90,10 @@
         <div class="modal-content">
             <button id="close-delete-modal-btn" class="close-button">×</button>
             <h3>Confirm Deletion</h3>
-            <p id="delete-confirm-message">Are you sure you want to delete this file? This action cannot be undone.</p>
+            <p id="delete-confirm-message">This action cannot be undone.</p>
             <div class="modal-actions">
-                <button id="cancel-delete-btn" class="modal-btn-secondary">Cancel</button>
-                <button id="confirm-delete-btn" class="modal-btn-danger">Confirm Delete</button>
+                <button id="cancel-delete-btn" class="modal-btn modal-btn-secondary">Cancel</button>
+                <button id="confirm-delete-btn" class="modal-btn modal-btn-danger">Confirm Delete</button>
             </div>
         </div>
     </div>
@@ -89,6 +103,7 @@
         <div class="modal-content">
             <button id="close-edit-modal-btn" class="close-button">×</button>
             <h3>Edit Uploader Name</h3>
+             <p>Enter the new name for the uploader of this file.</p>
             <form id="edit-form" class="upload-form">
                 <div class="form-group">
                     <label for="edit-uploader-name">New Name</label>
@@ -96,8 +111,8 @@
                 </div>
                 <div id="edit-status" class="upload-status"></div>
                  <div class="modal-actions">
-                    <button type="button" id="cancel-edit-btn" class="modal-btn-secondary">Cancel</button>
-                    <button type="submit" class="upload-button">Save Changes</button>
+                    <button type="button" id="cancel-edit-btn" class="modal-btn modal-btn-secondary">Cancel</button>
+                    <button type="submit" class="modal-btn modal-btn-primary">Save Changes</button>
                 </div>
             </form>
         </div>
